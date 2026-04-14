@@ -1,6 +1,6 @@
 # DEC3852 OPNsense – Konfigurationsdokumentation
 
-**Datum:** 14.04.2026 (aktualisiert)  
+**Datum:** 14.04.2026 (aktualisiert – Portnummern aus Cisco-Config extrahiert)  
 **Durchgeführt von:** Inan Bogisch  
 **Hardware:** Deciso DEC3852 (OPNsense Rack Security Appliance)  
 **Zweck:** Ablösung des Cisco RV345P (192.168.80.1) als Hauptrouter in Hamburg  
@@ -78,18 +78,6 @@ Cisco RV345P (nur noch als Switch, kein Routing/DHCP)
 
 Der Cisco hat auf allen VLANs IPv6 mit fec0: (Site-Local) konfiguriert, aber **IPv6 DHCP ist überall deaktiviert**.
 
-| VLAN | IPv6-Adresse | DHCPv6 |
-|------|-------------|--------|
-| VLAN1 | fec0::1/64 | Disabled |
-| VLAN2 | fec0:2::1/64 | Disabled |
-| VLAN4 | fec0:6::1/64 | Disabled |
-| VLAN42 | fec0:7::1/64 | Disabled |
-| VLAN80 | fec0:4::1/64 | Disabled |
-| VLAN88 | fec0:5::1/64 | Disabled |
-| VLAN90 | fec0:8::1/64 | Disabled |
-| VLAN188 | fec0:1::1/64 | Disabled |
-| VLAN189 | fec0:3::1/64 | Disabled |
-
 **Entscheidung:** IPv6 auf OPNsense erstmal weglassen, nach Umstieg prüfen ob etwas fehlt.
 
 ### Cisco Port-zu-VLAN-Zuordnung
@@ -149,11 +137,7 @@ Unter Interfaces → Devices → VLAN, alle mit Parent `igc0`:
 | vlan07 | 189 | VLAN189 | ✅ |
 | vlan08 | 80 | VLAN80 | ✅ |
 
-> VLAN1 wird nicht separat angelegt — ungetaggter Traffic auf `igc0` ist automatisch VLAN1.  
-> Die Device-Reihenfolge (vlan01–08) ist nur intern und hat keinen Einfluss auf die Funktion.
-
 ### 4. VLANs als Interfaces zugewiesen + IPs vergeben (erledigt ✅)
-Unter Interfaces → Assignments alle VLANs hinzugefügt, aktiviert und IPs vergeben:
 
 | VLAN | IP | Status |
 |------|----|--------|
@@ -170,7 +154,7 @@ Unter Interfaces → Assignments alle VLANs hinzugefügt, aktiviert und IPs verg
 
 | VLAN | DHCP Range | Status |
 |------|-----------|--------|
-| VLAN1 (LAN) | 192.168.1.10 – 192.168.1.240 | ✅ (aus Schritt 2) |
+| VLAN1 (LAN) | 192.168.1.10 – 192.168.1.240 | ✅ |
 | VLAN2 | 192.168.2.100 – 192.168.2.149 | ✅ |
 | VLAN42 | 192.168.42.100 – 192.168.42.200 | ✅ |
 | VLAN80 | 192.168.80.10 – 192.168.80.200 | ✅ |
@@ -190,21 +174,122 @@ Unter Services → DHCPv4 → VLAN90 die statischen DNS-Server eintragen:
 - DNS2: `10.4.250.100`
 
 ### 7. Static DHCP Einträge übernehmen (offen ❌)
-MAC-Adresse der FritzBox aus der Cisco ARP-Tabelle holen und auf OPNsense eintragen:
-- FritzBox 7590: `192.168.80.44` (MAC: aus ARP-Tabelle)
 
-Weitere statische Einträge vom Cisco prüfen und übernehmen.
+**Aus Cisco-Config extrahiert – alle 21 Einträge:**
+
+#### VLAN1 (LAN – igc0)
+
+| Name | IP | MAC | Aktiv |
+|------|-----|-----|-------|
+| fritz_telefon | 192.168.1.5 | 44:4e:6d:de:8e:27 | ✅ |
+| fritz_lan | 192.168.1.3 | 7c:ff:4d:c2:9e:9d | ✅ |
+| fritz_pm_telefon | 192.168.1.4 | 44:4e:6d:d8:26:0c | ✅ |
+
+#### VLAN80
+
+| Name | IP | MAC | Aktiv |
+|------|-----|-----|-------|
+| VLAN80_WP_Server | 192.168.80.250 | 42:82:66:ff:7f:f0 | ✅ |
+| PM_Brother_L2700DW | 192.168.80.83 | 60:6d:c7:69:08:f8 | ✅ |
+| PM_HP_7740 | 192.168.80.185 | b4:b6:86:54:f8:f1 | ✅ |
+| pma-tk01 (Telefonanlage) | 192.168.80.204 | 1c:69:7a:6d:66:79 | ✅ |
+| VPN-PC | 192.168.80.59 | 00:0d:b9:56:13:90 | ✅ |
+| PM_Mikrotik_Switch | 192.168.80.144 | 18:fd:74:58:e3:99 | ✅ |
+| Buerkert Server | 192.168.80.28 | ac:1f:6b:ee:a5:d9 | ✅ |
+| Silver Windows Server | 192.168.80.27 | 3c:ec:ef:8c:40:14 | ✅ |
+| Silver Dev Server | 192.168.80.74 | ac:1f:6b:dc:f5:3a | ✅ |
+| Silver LDAP-DNS | 192.168.80.171 | 00:15:5d:01:29:0b | ✅ |
+| Silver VMware ESXi | 192.168.80.29 | 40:f2:e9:98:86:aa | ✅ |
+| MySQL Server iLO | 192.168.80.25 | 2c:59:e5:3b:c7:28 | ✅ |
+| MySQL Server | 192.168.80.26 | f0:92:1c:11:ef:cc | ✅ |
+| Sonic PreStage | 192.168.80.205 | 00:15:5d:01:29:09 | ✅ |
+| QNAP restic | 192.168.80.249 | 00:08:9b:d4:de:78 | ✅ |
+| QNAP HV | 192.168.80.253 | 00:08:9b:c6:80:72 | ✅ |
+| FritzBox 7590 | 192.168.80.44 | dc:39:6f:e0:d6:4d | ✅ |
+
+#### VLAN42
+
+| Name | IP | MAC | Aktiv |
+|------|-----|-----|-------|
+| ECSIT_SYN_NAS | 192.168.42.179 | 00:11:32:99:a7:15 | ✅ |
+
+> **Eintragen unter:** Services → DHCPv4 → [jeweiliges VLAN] → Static Mappings
 
 ### 8. Firewall-Regeln (offen ❌)
-Zu übernehmen basierend auf Cisco-Konfiguration. Details siehe Abschnitt "Cisco Firewall-Konfiguration" unten.
+
+#### Grundeinstellungen auf OPNsense umsetzen:
+- DoS Protection: Aktivieren (Firewall → Settings → Advanced)
+- SIP ALG: Deaktiviert lassen
+- Session Timeouts: TCP 1800s, UDP 120s, ICMP 60s (Firewall → Settings → Advanced → Firewall Optimization)
+
+#### Basis-Regeln (analog Cisco):
+
+**Pro VLAN-Interface (VLAN1, VLAN2, VLAN42, VLAN80, VLAN88, VLAN90, VLAN188, VLAN189):**
+- Allow IPv4 All → WAN (= Internet-Zugang erlauben)
+
+**WAN-Interface:**
+- Default: Block all inbound (ist bei OPNsense Standard)
+
+**Inter-VLAN:**
+- Kein Inter-VLAN-Routing → auf jedem VLAN-Interface eine Block-Regel für RFC1918 als Destination hinzufügen (damit VLANs sich nicht gegenseitig erreichen)
 
 ### 9. Port-Forwarding übernehmen (offen ❌)
-Alle aktiven Port-Forwarding-Regeln vom Cisco auf OPNsense übertragen. Details siehe Abschnitt "Port-Forwarding" unten.
 
-> ⚠️ **Wichtig:** Die genauen Ports hinter den Service-Namen (TK_HTTPS, SIP1, VPNPC1 etc.) müssen aus der Cisco-Config-Datei extrahiert werden. Bisher sind nur die Service-Namen und Ziel-IPs bekannt.
+**🎉 Portnummern jetzt vollständig aus Cisco-Config extrahiert!**
+
+#### Aktive Port-Forwards (auf OPNsense unter Firewall → NAT → Port Forward):
+
+| Name | Protokoll | Ext. Port(s) | Ziel-IP | Int. Port(s) | VLAN | Beschreibung |
+|------|-----------|-------------|---------|-------------|------|-------------|
+| MyFritz | TCP | 39888 | 192.168.1.5 | 39888 | VLAN1 | FritzBox MyFritz-Zugang |
+| SIP1 | TCP+UDP | 5060 | 192.168.1.5 | 5060 | VLAN1 | SIP-Telefonie FritzBox 1 |
+| SIP1-UDP | UDP | 30000–30006 | 192.168.1.5 | 30000–30006 | VLAN1 | SIP RTP FritzBox 1 |
+| SIP2 | TCP+UDP | 5160 | 192.168.1.4 | 5160 | VLAN1 | SIP-Telefonie FritzBox 2 |
+| SIP2-UDP | UDP | 30007–30012 | 192.168.1.4 | 30007–30012 | VLAN1 | SIP RTP FritzBox 2 |
+| MyFritz-PM | TCP | 47341 | 192.168.1.4 | 47341 | VLAN1 | FritzBox P&M MyFritz |
+| SIP3 | TCP+UDP | 5260 | 192.168.80.201 | 5260 | VLAN80 | SIP-Telefonie TK |
+| SIP3-UPD | UDP | 50007–50200 | 192.168.80.201 | 50007–50200 | VLAN80 | SIP RTP TK |
+| TK_HTTPS | TCP | 5001 | 192.168.80.204 | 5001 | VLAN80 | Telefonanlage HTTPS |
+| TK_RTP | UDP | 9000–10999 | 192.168.80.204 | 9000–10999 | VLAN80 | Telefonanlage RTP |
+| TK_SIP | TCP+UDP | 5061 | 192.168.80.204 | 5061 | VLAN80 | Telefonanlage SIP |
+| TK_SIP_TLS | TCP | 5062 | 192.168.80.204 | 5062 | VLAN80 | Telefonanlage SIP-TLS |
+| TK_TunnelProtocol | TCP+UDP | 5091 | 192.168.80.204 | 5091 | VLAN80 | Telefonanlage Tunnel |
+| VPNPC1 | TCP | 51820 | 192.168.80.59 | 51820 | VLAN80 | VPN-Appliance WireGuard |
+| VPNPC2 | TCP+UDP | 1194 | 192.168.80.59 | 1194 | VLAN80 | VPN-Appliance OpenVPN |
+| VPNPC3 | TCP+UDP | 11194 | 192.168.80.59 | 11194 | VLAN80 | VPN-Appliance OpenVPN alt |
+| ECSIT_NAS | TCP | 50005–50006 | 192.168.42.179 | 50005–50006 | VLAN42 | NAS-Zugang |
+| HTTPS | TCP | 443 | 192.168.80.74 | 443 | VLAN80 | Webserver HTTPS |
+| HTTP | TCP | 80 | 192.168.80.74 | 80 | VLAN80 | Webserver HTTP |
+| VPNWG | UDP | 47111 | **192.168.80.48** | 47111 | VLAN80 | WireGuard VPN |
+
+> ⚠️ **Korrektur:** VPNWG-Ziel ist laut Cisco-Config **192.168.80.48** (nicht 192.168.88.48 wie in der alten Doku).
+
+#### Deaktiviert (NICHT übernehmen):
+
+| Name | Protokoll | Port | Ziel-IP | Grund |
+|------|-----------|------|---------|-------|
+| ISAKMP | UDP | 500 | 192.168.80.44 / 192.168.88.1 | War nie aktiv |
+| IPSEC-UDP-ENCAP | UDP | 4500 | 192.168.80.44 / 192.168.88.1 | War nie aktiv |
+| L2TP | UDP | 1701 | 192.168.88.1 | Nicht mehr benötigt |
+| L2TP_500 | UDP | 500 | 192.168.88.1 | Nicht mehr benötigt |
+| L2TP_1701 | UDP | 1701 | 192.168.88.1 | Nicht mehr benötigt |
+| L2TP_4500 | UDP | 4500 | 192.168.88.1 | Nicht mehr benötigt |
 
 ### 10. Static NAT für Telefonanlage einrichten (offen ❌)
-Details siehe Abschnitt "Static NAT" unten.
+
+Die Telefonanlage (192.168.80.204) hat eine feste öffentliche IP **31.172.106.157** über WAN1.
+
+| Privat-IP | Public IP | Service | Protokoll | Port |
+|-----------|----------|---------|-----------|------|
+| 192.168.80.204 | 31.172.106.157 | TK_HTTPS | TCP | 5001 |
+| 192.168.80.204 | 31.172.106.157 | TK_SIP | TCP+UDP | 5061 |
+| 192.168.80.204 | 31.172.106.157 | TK_TunnelProtocol | TCP+UDP | 5091 |
+
+**Auf OPNsense:**
+- Firewall → NAT → 1:1 NAT
+- Oder: Virtual IPs + Outbound NAT mit Source-Match auf 192.168.80.204
+
+> **Voraussetzung:** WAN1 mit der IP 31.172.106.157 muss verfügbar sein. Klären ob der ISP diese IP liefert oder ob ein separater Anschluss existiert.
 
 ### 11. WAN / PPPoE-Konfiguration (offen ❌ – Umstieg-Tag)
 - PPPoE-Zugangsdaten eintragen (ISP-Zugangsdaten klären!)
@@ -213,7 +298,6 @@ Details siehe Abschnitt "Static NAT" unten.
 
 ### 12. Firmware-Update (offen ❌ – Umstieg-Tag)
 - Direkt nach Internetverbindung unter System → Firmware aktualisieren
-- Reboot abwarten
 
 ### 13. Cisco RV345P als Switch umkonfigurieren (offen ❌ – Umstieg-Tag)
 - WAN-Kabel entfernen
@@ -225,103 +309,47 @@ Details siehe Abschnitt "Static NAT" unten.
 ### 14. VPN-Konfiguration (offen ❌ – mit Mauro)
 - Config-Export von der kleinen OPNsense (192.168.80.59) durch Mauro
 - VPN-Tunnel übernehmen/importieren
-- Mauro ist Ansprechpartner für VPN-Infrastruktur
 
 ### 15. VPN-Monitoring einrichten (offen ❌ – nach Umstieg)
-- OPNsense hat eingebaute Monitoring-Funktionen
-- Wird nach stabilem Betrieb konfiguriert
-- Alternativ: Ping-Script mit Slack-Alert
+
+### 16. Port-Forwarding für FritzBox VPN (offen ❌ – neu auf OPNsense)
+Auf dem Cisco war das FritzBox-Port-Forwarding deaktiviert (ESP-Limitierung). Auf der OPNsense neu einrichten:
+- UDP 500 (IKE) → 192.168.80.44
+- UDP 4500 (NAT-T) → 192.168.80.44
+- Protokoll 50 (ESP) → 192.168.80.44
 
 ---
 
-## Cisco Firewall-Konfiguration (Referenz für Übernahme)
+## Cisco Service-Definitionen (Referenz)
 
-### Grundeinstellungen
+Vollständige Zuordnung Service-Name → Protokoll/Port aus der Cisco-Config:
 
-- Firewall: Enabled
-- DoS Protection: Enabled
-- Block WAN Request: Enabled
-- Remote Web Management: Disabled
-- SIP ALG: Disabled
-- UPnP: Disabled
-- Session Timeouts: TCP 1800s, UDP 120s, ICMP 60s
-- Max Concurrent Connections: 40000
-
-### Generelle Access Rules
-
-| Prio | Action | Protokoll | Source IF | Source | Dest IF | Dest | Beschreibung |
-|------|--------|-----------|----------|--------|---------|------|-------------|
-| 4001 | Allow | IPv4: All Traffic | VLAN | Any | WAN | Any | Alles raus (IPv4) |
-| 4002 | Deny | IPv4: All Traffic | WAN | Any | VLAN | Any | Alles rein blocken (IPv4) |
-| 4001 | Allow | IPv6: All Traffic | VLAN | Any | WAN | Any | Alles raus (IPv6) |
-| 4002 | Deny | IPv6: All Traffic | WAN | Any | VLAN | Any | Alles rein blocken (IPv6) |
-
-> **Hinweis:** Es gibt keine expliziten Inter-VLAN-Block-Regeln. Die Isolation erfolgt über die VLAN-Konfiguration selbst ("Inter-VLAN Routing: Nein").
-
-### Port-Forwarding (aktiv ✅)
-
-#### Über WAN2 (PPPoE-Verbindung):
-
-| Name | Service | Ziel-IP | VLAN | Beschreibung |
-|------|---------|---------|------|-------------|
-| MyFritz | MyFritz | 192.168.1.5 | VLAN1 | FritzBox MyFritz-Zugang |
-| SIP1 | SIP1 | 192.168.1.5 | VLAN1 | SIP-Telefonie |
-| SIP1-UDP | SIP1-UDP | 192.168.1.5 | VLAN1 | SIP-Telefonie UDP |
-| SIP2 | SIP2 | 192.168.1.4 | VLAN1 | SIP-Telefonie |
-| SIP2-UDP | SIP2-UDP | 192.168.1.4 | VLAN1 | SIP-Telefonie UDP |
-| MyFritz-PM | MyFritz-PM | 192.168.1.4 | VLAN1 | FritzBox P&M MyFritz |
-| SIP3 | SIP3 | 192.168.80.201 | VLAN80 | SIP-Telefonie |
-| SIP3-UPD | SIP3-UPD | 192.168.80.201 | VLAN80 | SIP-Telefonie UDP |
-
-#### Über Any (beide WANs):
-
-| Name | Service | Ziel-IP | VLAN | Beschreibung |
-|------|---------|---------|------|-------------|
-| TK_HTTPS | TK_HTTPS | 192.168.80.204 | VLAN80 | Telefonanlage HTTPS |
-| TK_RTP | TK_RTP | 192.168.80.204 | VLAN80 | Telefonanlage RTP |
-| TK_SIP | TK_SIP | 192.168.80.204 | VLAN80 | Telefonanlage SIP |
-| TK_SIP_TLS | TK_SIP_TLS | 192.168.80.204 | VLAN80 | Telefonanlage SIP-TLS |
-| TK_TunnelProtocolServiceListener | TK_TunnelProtocolServiceListener | 192.168.80.204 | VLAN80 | Telefonanlage Tunnel |
-| VPNPC1 | VPNPC1 | 192.168.80.59 | VLAN80 | VPN-Appliance |
-| VPNPC2 | VPNPC2 | 192.168.80.59 | VLAN80 | VPN-Appliance |
-| VPNPC3 | VPNPC3 | 192.168.80.59 | VLAN80 | VPN-Appliance |
-| ECSIT_NAS | ECSIT_NAS | 192.168.42.179 | VLAN42 | NAS-Zugang |
-| HTTPS | HTTPS | 192.168.80.74 | VLAN80 | Webserver HTTPS |
-| HTTP | HTTP | 192.168.80.74 | VLAN80 | Webserver HTTP |
-| VPNWG | VPNWG | 192.168.88.48 | VLAN88 | WireGuard VPN |
-
-> ⚠️ **Die genauen Portnummern hinter den Service-Namen müssen aus der Cisco-Config-Datei extrahiert werden!**
-
-#### Deaktiviert (❌ – nicht übernehmen):
-
-| Name | Ziel-IP | Beschreibung |
-|------|---------|-------------|
-| ISAKMP | 192.168.80.44 | FritzBox IPsec (WAN2) – war auf Cisco nie aktiv |
-| IPSEC-UDP-ENCAP | 192.168.80.44 | FritzBox IPsec (WAN2) – war auf Cisco nie aktiv |
-| IPSEC-UDP-ENCAP | 192.168.88.1 | IPsec auf VLAN88 GW |
-| ISAKMP | 192.168.88.1 | IPsec auf VLAN88 GW |
-| L2TP | 192.168.88.1 | L2TP |
-| L2TP_500 | 192.168.88.1 | L2TP Port 500 |
-| L2TP_1701 | 192.168.88.1 | L2TP Port 1701 |
-| L2TP_4500 | 192.168.88.1 | L2TP Port 4500 |
-
-### Static NAT (WAN1 – Telefonanlage)
-
-| Private IP | Public IP | Services | Interface |
-|-----------|----------|----------|-----------|
-| 192.168.80.204 | 31.172.106.157 | TK_HTTPS | WAN1 |
-| 192.168.80.204 | 31.172.106.157 | TK_SIP | WAN1 |
-| 192.168.80.204 | 31.172.106.157 | TK_TunnelProtocolServiceListener | WAN1 |
-
-> **Hinweis:** Die Telefonanlage (192.168.80.204) hat eine feste öffentliche IP 31.172.106.157 über WAN1. Zugehörige Access Rules (2001–2003) erlauben Traffic von 31.172.106.157 zur Telefonanlage.
-
-### Access Rules mit spezifischer Source-IP (WAN1)
-
-| Prio | Service | Source IF | Source IP | Dest-IP | Beschreibung |
-|------|---------|----------|-----------|---------|-------------|
-| 2001 | TK_HTTPS | WAN1 | 31.172.106.157 | 192.168.80.204 | TK HTTPS von Public IP |
-| 2002 | TK_SIP | WAN1 | 31.172.106.157 | 192.168.80.204 | TK SIP von Public IP |
-| 2003 | TK_TunnelProtocol | WAN1 | 31.172.106.157 | 192.168.80.204 | TK Tunnel von Public IP |
+| Service-Name | Protokoll | Port(s) |
+|-------------|-----------|---------|
+| MyFritz | TCP | 39888 |
+| MyFritz-PM | TCP | 47341 |
+| SIP1 | TCP+UDP | 5060 |
+| SIP1-UDP | UDP | 30000–30006 |
+| SIP2 | TCP+UDP | 5160 |
+| SIP2-UDP | UDP | 30007–30012 |
+| SIP3 | TCP+UDP | 5260 |
+| SIP3-UPD | UDP | 50007–50200 |
+| TK_HTTPS | TCP | 5001 |
+| TK_RTP | UDP | 9000–10999 |
+| TK_SIP | TCP+UDP | 5061 |
+| TK_SIP_TLS | TCP | 5062 |
+| TK_TunnelProtocolServiceListener | TCP+UDP | 5091 |
+| VPNPC1 | TCP | 51820 |
+| VPNPC2 | TCP+UDP | 1194 |
+| VPNPC3 | TCP+UDP | 11194 |
+| VPNWG | UDP | 47111 |
+| ECSIT_NAS | TCP | 50005–50006 |
+| HTTP | TCP | 80 |
+| HTTPS | TCP | 443 |
+| ISAKMP | UDP | 500 |
+| IPSEC-UDP-ENCAP | UDP | 4500 |
+| L2TP | UDP | 1701 |
+| ESP | IP-Protokoll | 50 |
 
 ---
 
@@ -347,39 +375,7 @@ Details siehe Abschnitt "Static NAT" unten.
 | 1 | PM_Remote_Wedolo | 0 | 0.0.0.0/0 |
 | 2 | PM_Remote | 1 | 0.0.0.0/0 |
 
-### IPsec Profiles
-
-| Name | IKE Version | Policy | In Use |
-|------|------------|--------|--------|
-| Amazon_Web_Services | IKEv1 | Auto | No |
-| Default | IKEv1 | Auto | Yes |
-| Microsoft_Azure | IKEv1 | Auto | No |
-| BSSWedolo | IKEv1 | Auto | Yes |
-| PM_L2TP | IKEv1 | Auto | Yes |
-| HagebauIT | IKEv1 | Auto | No |
-| hagebau2 | IKEv2 | Auto | No |
-| hagebau3 | IKEv2 | Auto | No |
-| hagebauCopyv1 | IKEv1 | Auto | No |
-| HagebaunewVPN | IKEv2 | Auto | Yes |
-
-> **Hinweis:** Die VPN-Konfiguration wird von Mauro verwaltet. Die Tunnel laufen aktuell auf dem Cisco und auf der kleinen OPNsense (192.168.80.59). Mauro liefert den Config-Export.
-
-### Port-Forwarding für FritzBox VPN (neu auf OPNsense)
-
-Auf dem Cisco war das FritzBox-Port-Forwarding deaktiviert (ESP-Limitierung). Auf der OPNsense neu einrichten:
-- UDP 500 (IKE) → 192.168.80.44
-- UDP 4500 (NAT-T) → 192.168.80.44
-- Protokoll 50 (ESP) → 192.168.80.44
-
----
-
-## Hinweise
-
-- **Kein Firmware-Update vor Umstieg möglich** – DEC3852 ist offline, Update erfolgt am Umstieg-Tag
-- **Config-Import möglich** – OPNsense speichert alles in einer XML-Datei (System → Configuration → Backups), teilweiser Import einzelner Sektionen möglich aber mit Vorsicht
-- **Cisco als Switch:** Falls der Cisco nicht sauber als Switch funktioniert, muss ein Managed Switch beschafft werden
-- **ISP/PPPoE-Zugangsdaten** müssen vor dem Umstieg vorliegen
-- **Cisco-Config-Datei** exportieren (Administration → Configuration Management → Download to PC) und aufbewahren – enthält die genauen Portnummern für alle Service-Definitionen
+> **Hinweis:** VPN wird von Mauro verwaltet. Tunnel laufen auf Cisco + kleine OPNsense (192.168.80.59).
 
 ---
 
