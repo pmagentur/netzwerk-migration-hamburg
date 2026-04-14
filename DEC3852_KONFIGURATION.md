@@ -1,10 +1,10 @@
 # DEC3852 OPNsense – Konfigurationsdokumentation
 
-**Datum:** 14.04.2026 (aktualisiert – Portnummern aus Cisco-Config extrahiert)  
+**Datum:** 14.04.2026 (aktualisiert)  
 **Durchgeführt von:** Inan Bogisch  
 **Hardware:** Deciso DEC3852 (OPNsense Rack Security Appliance)  
 **Zweck:** Ablösung des Cisco RV345P (192.168.80.1) als Hauptrouter in Hamburg  
-**Status:** 🔧 VLANs + DHCP erledigt, Firewall/NAT/Port-Forwarding offen
+**Status:** 🔧 VLANs + DHCP + DNS erledigt, Static DHCP teilweise, Firewall/NAT/Port-Forwarding offen
 
 ---
 
@@ -72,11 +72,7 @@ Cisco RV345P (nur noch als Switch, kein Routing/DHCP)
 | VLAN88 | DNS Proxy (OPNsense) | – |
 | VLAN90 | **Statische DNS** | **10.32.160.10, 10.4.250.100** |
 
-> ⚠️ **TODO:** VLAN90 DNS-Server auf OPNsense nachtragen (Services → DHCPv4 → VLAN90)
-
-### IPv6-Konfiguration (Cisco – Übernahme offen)
-
-Der Cisco hat auf allen VLANs IPv6 mit fec0: (Site-Local) konfiguriert, aber **IPv6 DHCP ist überall deaktiviert**.
+### IPv6-Konfiguration
 
 **Entscheidung:** IPv6 auf OPNsense erstmal weglassen, nach Umstieg prüfen ob etwas fehlt.
 
@@ -114,7 +110,7 @@ Der Cisco hat auf allen VLANs IPv6 mit fec0: (Site-Local) konfiguriert, aber **I
 ## Durchgeführte Schritte auf der DEC3852
 
 ### 1. System-Grundeinstellungen (erledigt ✅)
-- Admin-Passwort geändert (Default war `root` / `opnsense`)
+- Admin-Passwort geändert
 - Hostname und Domain gesetzt
 - Zeitzone: Europe/Berlin
 - DNS-Server konfiguriert
@@ -124,7 +120,6 @@ Der Cisco hat auf allen VLANs IPv6 mit fec0: (Site-Local) konfiguriert, aber **I
 - DHCP-Server aktiviert: Range `192.168.1.10` – `192.168.1.240`
 
 ### 3. VLANs angelegt (erledigt ✅)
-Unter Interfaces → Devices → VLAN, alle mit Parent `igc0`:
 
 | Device | VLAN Tag | Description | Status |
 |--------|----------|------------|--------|
@@ -164,80 +159,77 @@ Unter Interfaces → Devices → VLAN, alle mit Parent `igc0`:
 | VLAN188 | kein DHCP | ✅ |
 | VLAN189 | kein DHCP | ✅ |
 
----
-
-## Offene Schritte
-
-### 6. VLAN90 DNS-Server nachtragen (offen ❌)
-Unter Services → DHCPv4 → VLAN90 die statischen DNS-Server eintragen:
+### 6. VLAN90 DNS-Server nachgetragen (erledigt ✅)
 - DNS1: `10.32.160.10`
 - DNS2: `10.4.250.100`
 
-### 7. Static DHCP Einträge übernehmen (offen ❌)
+### 7. Static DHCP Einträge übernehmen (teilweise ✅ / offen ❌)
 
-**Aus Cisco-Config extrahiert – alle 21 Einträge:**
+**Händisch eingetragen (4 von 21):**
 
-#### VLAN1 (LAN – igc0)
+| Name | IP | MAC | VLAN | Status |
+|------|-----|-----|------|--------|
+| fritz_telefon | 192.168.1.5 | 44:4e:6d:de:8e:27 | VLAN1 | ✅ |
+| fritz_lan | 192.168.1.3 | 7c:ff:4d:c2:9e:9d | VLAN1 | ✅ |
+| fritz_pm_telefon | 192.168.1.4 | 44:4e:6d:d8:26:0c | VLAN1 | ✅ |
+| pma-tk01 | 192.168.80.204 | 1c:69:7a:6d:66:79 | VLAN80 | ✅ |
 
-| Name | IP | MAC | Aktiv |
-|------|-----|-----|-------|
-| fritz_telefon | 192.168.1.5 | 44:4e:6d:de:8e:27 | ✅ |
-| fritz_lan | 192.168.1.3 | 7c:ff:4d:c2:9e:9d | ✅ |
-| fritz_pm_telefon | 192.168.1.4 | 44:4e:6d:d8:26:0c | ✅ |
+**Noch einzutragen (17 Einträge – per Config-Import am Donnerstag):**
 
-#### VLAN80
+#### VLAN80 (16 Einträge)
 
-| Name | IP | MAC | Aktiv |
-|------|-----|-----|-------|
-| VLAN80_WP_Server | 192.168.80.250 | 42:82:66:ff:7f:f0 | ✅ |
-| PM_Brother_L2700DW | 192.168.80.83 | 60:6d:c7:69:08:f8 | ✅ |
-| PM_HP_7740 | 192.168.80.185 | b4:b6:86:54:f8:f1 | ✅ |
-| pma-tk01 (Telefonanlage) | 192.168.80.204 | 1c:69:7a:6d:66:79 | ✅ |
-| VPN-PC | 192.168.80.59 | 00:0d:b9:56:13:90 | ✅ |
-| PM_Mikrotik_Switch | 192.168.80.144 | 18:fd:74:58:e3:99 | ✅ |
-| Buerkert Server | 192.168.80.28 | ac:1f:6b:ee:a5:d9 | ✅ |
-| Silver Windows Server | 192.168.80.27 | 3c:ec:ef:8c:40:14 | ✅ |
-| Silver Dev Server | 192.168.80.74 | ac:1f:6b:dc:f5:3a | ✅ |
-| Silver LDAP-DNS | 192.168.80.171 | 00:15:5d:01:29:0b | ✅ |
-| Silver VMware ESXi | 192.168.80.29 | 40:f2:e9:98:86:aa | ✅ |
-| MySQL Server iLO | 192.168.80.25 | 2c:59:e5:3b:c7:28 | ✅ |
-| MySQL Server | 192.168.80.26 | f0:92:1c:11:ef:cc | ✅ |
-| Sonic PreStage | 192.168.80.205 | 00:15:5d:01:29:09 | ✅ |
-| QNAP restic | 192.168.80.249 | 00:08:9b:d4:de:78 | ✅ |
-| QNAP HV | 192.168.80.253 | 00:08:9b:c6:80:72 | ✅ |
-| FritzBox 7590 | 192.168.80.44 | dc:39:6f:e0:d6:4d | ✅ |
+| Name | IP | MAC |
+|------|-----|-----|
+| VLAN80_WP_Server | 192.168.80.250 | 42:82:66:ff:7f:f0 |
+| PM_Brother_L2700DW | 192.168.80.83 | 60:6d:c7:69:08:f8 |
+| PM_HP_7740 | 192.168.80.185 | b4:b6:86:54:f8:f1 |
+| VPN-PC | 192.168.80.59 | 00:0d:b9:56:13:90 |
+| PM_Mikrotik_Switch | 192.168.80.144 | 18:fd:74:58:e3:99 |
+| Buerkert Server | 192.168.80.28 | ac:1f:6b:ee:a5:d9 |
+| Silver Windows Server | 192.168.80.27 | 3c:ec:ef:8c:40:14 |
+| Silver Dev Server | 192.168.80.74 | ac:1f:6b:dc:f5:3a |
+| Silver LDAP-DNS | 192.168.80.171 | 00:15:5d:01:29:0b |
+| Silver VMware ESXi | 192.168.80.29 | 40:f2:e9:98:86:aa |
+| MySQL Server iLO | 192.168.80.25 | 2c:59:e5:3b:c7:28 |
+| MySQL Server | 192.168.80.26 | f0:92:1c:11:ef:cc |
+| Sonic PreStage | 192.168.80.205 | 00:15:5d:01:29:09 |
+| QNAP restic | 192.168.80.249 | 00:08:9b:d4:de:78 |
+| QNAP HV | 192.168.80.253 | 00:08:9b:c6:80:72 |
+| FritzBox 7590 | 192.168.80.44 | dc:39:6f:e0:d6:4d |
 
-#### VLAN42
+#### VLAN42 (1 Eintrag)
 
-| Name | IP | MAC | Aktiv |
-|------|-----|-----|-------|
-| ECSIT_SYN_NAS | 192.168.42.179 | 00:11:32:99:a7:15 | ✅ |
+| Name | IP | MAC |
+|------|-----|-----|
+| ECSIT_SYN_NAS | 192.168.42.179 | 00:11:32:99:a7:15 |
 
-> **Eintragen unter:** Services → DHCPv4 → [jeweiliges VLAN] → Static Mappings
+> **Plan Donnerstag:** OPNsense-Backup hochladen → Static DHCP per Config-Import einfügen → Config zurückspielen
+
+---
+
+## Offene Schritte
 
 ### 8. Firewall-Regeln (offen ❌)
 
 #### Grundeinstellungen auf OPNsense umsetzen:
 - DoS Protection: Aktivieren (Firewall → Settings → Advanced)
 - SIP ALG: Deaktiviert lassen
-- Session Timeouts: TCP 1800s, UDP 120s, ICMP 60s (Firewall → Settings → Advanced → Firewall Optimization)
+- Session Timeouts: TCP 1800s, UDP 120s, ICMP 60s
 
 #### Basis-Regeln (analog Cisco):
 
-**Pro VLAN-Interface (VLAN1, VLAN2, VLAN42, VLAN80, VLAN88, VLAN90, VLAN188, VLAN189):**
+**Pro VLAN-Interface:**
 - Allow IPv4 All → WAN (= Internet-Zugang erlauben)
 
 **WAN-Interface:**
-- Default: Block all inbound (ist bei OPNsense Standard)
+- Default: Block all inbound (OPNsense Standard)
 
 **Inter-VLAN:**
-- Kein Inter-VLAN-Routing → auf jedem VLAN-Interface eine Block-Regel für RFC1918 als Destination hinzufügen (damit VLANs sich nicht gegenseitig erreichen)
+- Kein Inter-VLAN-Routing → auf jedem VLAN-Interface Block-Regel für RFC1918 als Destination
 
 ### 9. Port-Forwarding übernehmen (offen ❌)
 
-**🎉 Portnummern jetzt vollständig aus Cisco-Config extrahiert!**
-
-#### Aktive Port-Forwards (auf OPNsense unter Firewall → NAT → Port Forward):
+**Portnummern vollständig aus Cisco-Config extrahiert:**
 
 | Name | Protokoll | Ext. Port(s) | Ziel-IP | Int. Port(s) | VLAN | Beschreibung |
 |------|-----------|-------------|---------|-------------|------|-------------|
@@ -277,7 +269,7 @@ Unter Services → DHCPv4 → VLAN90 die statischen DNS-Server eintragen:
 
 ### 10. Static NAT für Telefonanlage einrichten (offen ❌)
 
-Die Telefonanlage (192.168.80.204) hat eine feste öffentliche IP **31.172.106.157** über WAN1.
+Telefonanlage (192.168.80.204) hat feste öffentliche IP **31.172.106.157** über WAN1.
 
 | Privat-IP | Public IP | Service | Protokoll | Port |
 |-----------|----------|---------|-----------|------|
@@ -285,35 +277,22 @@ Die Telefonanlage (192.168.80.204) hat eine feste öffentliche IP **31.172.106.1
 | 192.168.80.204 | 31.172.106.157 | TK_SIP | TCP+UDP | 5061 |
 | 192.168.80.204 | 31.172.106.157 | TK_TunnelProtocol | TCP+UDP | 5091 |
 
-**Auf OPNsense:**
-- Firewall → NAT → 1:1 NAT
-- Oder: Virtual IPs + Outbound NAT mit Source-Match auf 192.168.80.204
-
-> **Voraussetzung:** WAN1 mit der IP 31.172.106.157 muss verfügbar sein. Klären ob der ISP diese IP liefert oder ob ein separater Anschluss existiert.
+> **Voraussetzung:** WAN1 mit IP 31.172.106.157 muss verfügbar sein.
 
 ### 11. WAN / PPPoE-Konfiguration (offen ❌ – Umstieg-Tag)
-- PPPoE-Zugangsdaten eintragen (ISP-Zugangsdaten klären!)
+- PPPoE-Zugangsdaten eintragen
 - Ggf. VLAN-Tag auf WAN-Interface (z.B. VLAN7 bei Telekom)
 - WAN-Interface: `igc1`
 
 ### 12. Firmware-Update (offen ❌ – Umstieg-Tag)
-- Direkt nach Internetverbindung unter System → Firmware aktualisieren
 
 ### 13. Cisco RV345P als Switch umkonfigurieren (offen ❌ – Umstieg-Tag)
-- WAN-Kabel entfernen
-- DHCP-Server auf allen VLANs deaktivieren
-- Routing deaktivieren
-- Einen Port als Trunk zur DEC3852 konfigurieren (alle VLANs tagged)
-- Restliche Port-zu-VLAN-Zuordnung beibehalten
 
 ### 14. VPN-Konfiguration (offen ❌ – mit Mauro)
-- Config-Export von der kleinen OPNsense (192.168.80.59) durch Mauro
-- VPN-Tunnel übernehmen/importieren
 
 ### 15. VPN-Monitoring einrichten (offen ❌ – nach Umstieg)
 
 ### 16. Port-Forwarding für FritzBox VPN (offen ❌ – neu auf OPNsense)
-Auf dem Cisco war das FritzBox-Port-Forwarding deaktiviert (ESP-Limitierung). Auf der OPNsense neu einrichten:
 - UDP 500 (IKE) → 192.168.80.44
 - UDP 4500 (NAT-T) → 192.168.80.44
 - Protokoll 50 (ESP) → 192.168.80.44
@@ -321,8 +300,6 @@ Auf dem Cisco war das FritzBox-Port-Forwarding deaktiviert (ESP-Limitierung). Au
 ---
 
 ## Cisco Service-Definitionen (Referenz)
-
-Vollständige Zuordnung Service-Name → Protokoll/Port aus der Cisco-Config:
 
 | Service-Name | Protokoll | Port(s) |
 |-------------|-----------|---------|
@@ -355,7 +332,7 @@ Vollständige Zuordnung Service-Name → Protokoll/Port aus der Cisco-Config:
 
 ## VPN-Konfiguration (Cisco – Referenz, Übernahme durch Mauro)
 
-### Site-to-Site Tunnel (IPsec auf Cisco RV345P)
+### Site-to-Site Tunnel
 
 | # | Name | Status | Encryption | Local Group | Remote Group | Remote Gateway |
 |---|------|--------|-----------|-------------|-------------|---------------|
@@ -368,14 +345,19 @@ Vollständige Zuordnung Service-Name → Protokoll/Port aus der Cisco-Config:
 | 7 | HagebauIT | UP | aes256-sha256-modp2048 | 10.4.250.0/24 | 10.0.8.0/10 | 217.237.163.70 |
 | 8 | BSSWedolo | DOWN | aes256-sha256-modp1536 | 192.168.88.0/24 | 10.100.118.0/24 | 62.153.250.118 |
 
-### Remote Access VPN (Client-to-Site)
+---
 
-| # | Group/Tunnel Name | Connections | Local Group |
-|---|------------------|------------|-------------|
-| 1 | PM_Remote_Wedolo | 0 | 0.0.0.0/0 |
-| 2 | PM_Remote | 1 | 0.0.0.0/0 |
+## Nächste Session: Donnerstag 16.04.2026
 
-> **Hinweis:** VPN wird von Mauro verwaltet. Tunnel laufen auf Cisco + kleine OPNsense (192.168.80.59).
+**Plan:**
+1. OPNsense-Backup hochladen → restliche 17 Static DHCP per Config-Import
+2. Schritt 8: Firewall-Regeln händisch anlegen (Lerneffekt!)
+3. Schritt 9: Port-Forwarding händisch anlegen (Lerneffekt!)
+4. Schritt 10: Static NAT für Telefonanlage
+
+**Vorbereitung bis Donnerstag:**
+- OPNsense-Backup runterladen: System → Configuration → Backups → Download
+- Backup am Donnerstag hier hochladen
 
 ---
 
