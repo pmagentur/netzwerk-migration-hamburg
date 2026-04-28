@@ -1,4 +1,4 @@
-# VPN-Config Review DEC3852 → für Mauro
+# VPN-Config Review DEC3852 
 
 **Erstellt:** 28.04.2026
 **Quelle:** Vergleich `RV345P_configuration_2026-04-14.xml` ↔ `config-merged-20260423.xml`
