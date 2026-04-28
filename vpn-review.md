@@ -58,13 +58,3 @@ Empfehlung: überall DPD ein, z.B. delay=10s / maxfail=5.
 | **BSSWedolo** (62.153.250.118, ikev1) | Im Cisco enabled (Status DOWN). In OPN gar nicht angelegt. Bewusst weggelassen oder vergessen? |
 | **Bürkert_2_Adacor** (ikev1) | In beiden disabled. Komplett raus oder noch behalten? |
 | **PM_Remote Mobile-Clients** (192.168.81.x) | Cisco-IPsec-Pool entfällt mit Umstieg. Wie connecten Entwickler künftig? Weiter über kleine OPN `192.168.80.59`? WireGuard auf DEC3852 ist angelegt aber disabled. |
-
----
-
-## ✅ Korrekt übernommen (zur Info)
-
-- Phase-1 Crypto (aes256/sha256/dh14/28800s) für alle IKEv2-Tunnel
-- Sonic mit lifetime=86400, Bürkert-Adacor mit ikev1/dh2/sha1/7800s
-- Local IDs (.74, .28, 80.0/24) konsistent
-- Bürkert-Adacor IKEv2-Tunnel mit allen 7 Phase-2-Subnetzen (120.x / 151.x)
-- **Tyczka mit zweitem P2 für `10.118.47.0/24`** = der ERP-Range, der mit Cisco nicht ging ✓
